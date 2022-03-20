@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::collections::HashSet;
 
 pub mod algorithms;
@@ -43,7 +44,10 @@ impl Wordle {
             assert!(self.dictionary.contains(&*guess));
 
             let correctness = Correctness::compute(&answer, &guess);
-            history.push(Guess { word: guess, mask: correctness })
+            history.push(Guess {
+                word: Cow::Owned(guess),
+                mask: correctness,
+            })
         }
         None
     }
@@ -62,7 +66,6 @@ pub enum Correctness {
 }
 
 impl Correctness {
-
     /// computes the Correctness "mask" for each character of the given `guess` compared against
     /// the characters of the given `answer`.
     fn compute(answer: &str, guess: &str) -> [Self; 5] {
@@ -109,7 +112,7 @@ impl Correctness {
     /// Some patterns are impossible to reach so in reality this would be slightly
     /// less than 3^5, but it should not affect our calculations. We'll generate the Cartesian
     /// Product and optimize later
-    pub fn patterns() -> impl Iterator<Item = [Self; 5]> {
+    pub fn patterns() -> impl Iterator<Item=[Self; 5]> {
         itertools::iproduct!(
             [Self::Correct, Self::Misplaced, Self::Wrong],
             [Self::Correct, Self::Misplaced, Self::Wrong],
@@ -124,15 +127,14 @@ impl Correctness {
 /// Guess holds the details of a guessed word.
 /// It contains a guessed word along with the correctness mask of that word compared against
 /// the actual answer
-pub struct Guess {
+pub struct Guess<'a> {
     /// a word that was guessed
-    pub word: String,
+    pub word: Cow<'a, str>,
     /// the correctness mask of each character of word when compared against the true answer
     pub mask: [Correctness; 5],
 }
 
-impl Guess {
-
+impl Guess<'_> {
     /// compares the given `word` against the word in this guess to see if `word` could be a
     /// plausible guess... a.k.a a "match"
     /// returns `true` if `word` could be a plausible guess
@@ -145,9 +147,14 @@ impl Guess {
         // keeps track of which chars in a word have been used thus far
         let mut used = [false; 5];
 
-        for (i, ((prev_guess_ch, &prev_guess_corr), word_char)) in self.word.chars().zip(&self.mask).zip(word.chars()).enumerate() {
+        for (i, ((pg, &prev_guess_corr), w)) in self
+            .word
+            .bytes()
+            .zip(&self.mask)
+            .zip(word.bytes())
+            .enumerate() {
             if prev_guess_corr == Correctness::Correct {
-                if prev_guess_ch != word_char {
+                if pg != w {
                     return false;
                 } else {
                     used[i] = true;
@@ -155,40 +162,49 @@ impl Guess {
             }
         }
 
-        for (i, (word_char, &mask)) in word.chars().zip(&self.mask).enumerate() {
+        for (i, (w, &mask)) in word
+            .bytes()
+            .zip(&self.mask)
+            .enumerate() {
             if mask == Correctness::Correct {
                 // must be correct or we would've returned in the previous loop
                 continue;
             }
             let mut plausible = true;
-            if self.word.chars().zip(&self.mask).enumerate().any(|(j, (pg, &m))| {
-                if pg != word_char {
-                    return false;
-                }
-                if used[j] {
-                    return false;
-                }
-                // we're looking at 'word_char' in 'word' and have found a 'word_char' in the
-                // previous guess. The color of that previous 'word_char' will tell us whether
-                // this 'word_char' might be okay
-                match m {
-                    Correctness::Correct => unreachable!("all correct guesses should have already returned or be used"),
-                    Correctness::Misplaced if j == i => {
-                        // 'w' was yellow in this same position last time around, which means that
-                        // word cannot be the answer
-                        plausible = false;
+            if self.word
+                .bytes()
+                .zip(&self.mask)
+                .enumerate()
+                .any(|(j, (pg, &m))| {
+                    if pg != w {
                         return false;
                     }
-                    Correctness::Misplaced => {
-                        used[j] = true;
-                        return true;
-                    }
-                    Correctness::Wrong => {
-                        plausible = false;
+
+                    if used[j] {
                         return false;
                     }
-                }
-            }) && plausible {
+
+                    // we're looking at 'word_char' in 'word' and have found a 'word_char' in the
+                    // previous guess. The color of that previous 'word_char' will tell us whether
+                    // this 'word_char' might be okay
+                    match m {
+                        Correctness::Correct => unreachable!("all correct guesses should have already returned or be used"),
+                        Correctness::Misplaced if j == i => {
+                            // 'w' was yellow in this same position last time around, which means that
+                            // word cannot be the answer
+                            plausible = false;
+                            return false;
+                        }
+                        Correctness::Misplaced => {
+                            used[j] = true;
+                            return true;
+                        }
+                        Correctness::Wrong => {
+                            plausible = false;
+                            return false;
+                        }
+                    }
+                }) && plausible {
                 // the character in 'w' was yellow in a previous match
             } else if !plausible {
                 return false;
@@ -273,7 +289,6 @@ mod tests {
 
             check!("aaabb" + [C M W W W] disallows "accaa");
         }
-
     }
 
     mod game {

@@ -2,17 +2,18 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use crate::{Guesser, Guess, DICTIONARY, Correctness};
 
-/// A "naive", i.e. unoptimized, wordle solver algorithm
-pub struct Unoptimized {
+/// A wordle solver algorithm that optimizes some of the allocations done in the Unoptimized
+/// algorithm
+pub struct Allocs {
     /// a map containing all possible words that could be a possible solution
     /// it maps a `word` -> `occurrence count`, where occurrence_count is the number of times
     /// that word appeared in books
     remaining: HashMap<&'static str, usize>,
 }
 
-impl Unoptimized {
+impl Allocs {
 
-    /// Creates a new unoptimized algorithm for solving wordle
+    /// Creates a new Allocs algorithm for solving wordle
     pub fn new() -> Self {
         Self {
             remaining: HashMap::from_iter(
@@ -38,9 +39,9 @@ struct Candidate {
     goodness: f64,
 }
 
-impl Guesser for Unoptimized {
+impl Guesser for Allocs {
 
-    /// An unoptimized guessing algorithm for wordle.
+    /// An Allocs guessing algorithm for wordle.
     /// We Need to find the 'goodness' score of each word remaining and then return the one
     /// with the highest goodness. We'll use information theory to compute the expected
     /// amount of information we would gain if a word isn't the answer, combined with
@@ -85,7 +86,8 @@ impl Guesser for Unoptimized {
                     // considering a "world" where we did guess "word" and got "pattern" as the
                     // correctness. Now compute what _then_ is left
                     let g = Guess {
-                        word: Cow::Owned(word.to_string()),
+                        // OPTIMIZED word.to_string() removed in favor of Cow::Borrowed
+                        word: Cow::Borrowed(word),
                         mask: pattern,
                     };
                     if g.matches(candidate) {

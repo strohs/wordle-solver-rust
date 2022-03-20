@@ -15,5 +15,6 @@ This count data is provided by Google Books' [Ngram Viewer](https://storage.goog
 - `answers.txt` all five-letter words that wordle will accept as valid guesses, in the order that wordle used them,
 with most recently used words at the top of the file.
 
-### Crates used
+### Benchmarking tools
 - [hyperfine](https://crates.io/crates/hyperfine) to benchmark the solver from the command line
+- [cargo flamegraph]() for performance analysis 
