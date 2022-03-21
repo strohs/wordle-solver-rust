@@ -21,6 +21,7 @@ struct Args {
 enum Implementation {
     Unoptimized,
     Allocs,
+    Vecrem,
 }
 
 
@@ -34,7 +35,10 @@ fn main() {
         },
         Implementation::Allocs => {
             play(|| wordle_solver::algorithms::Allocs::new(), args.max);
-        }
+        },
+        Implementation::Vecrem => {
+            play(|| wordle_solver::algorithms::Vecrem::new(), args.max);
+        },
     }
 }
 

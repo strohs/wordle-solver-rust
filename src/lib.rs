@@ -66,8 +66,9 @@ pub enum Correctness {
 }
 
 impl Correctness {
-    /// computes the Correctness "mask" for each character of the given `guess` compared against
-    /// the characters of the given `answer`.
+
+    /// computes and returns the Correctness "mask" for each character of the given `guess`
+    /// when compared against the characters of the given `answer`.
     fn compute(answer: &str, guess: &str) -> [Self; 5] {
         assert_eq!(answer.len(), 5);
         assert_eq!(guess.len(), 5);
@@ -135,6 +136,7 @@ pub struct Guess<'a> {
 }
 
 impl Guess<'_> {
+
     /// compares the given `word` against the word in this guess to see if `word` could be a
     /// plausible guess... a.k.a  a "match"
     /// returns `true` if `word` could be a plausible guess
@@ -143,7 +145,7 @@ impl Guess<'_> {
     pub fn matches(&self, word: &str) -> bool {
         // using Correctness::compute is a 18x runtime improvement over using old matches
         return Correctness::compute(word, &self.word) == self.mask;
-        
+
         // assert_eq!(self.word.len(), 5);
         // assert_eq!(word.len(), 5);
         //
@@ -224,6 +226,20 @@ pub trait Guesser {
 }
 
 impl Guesser for fn(history: &[Guess]) -> String {
+
+    /// A guessing algorithm for wordle.
+    /// We Need to find the 'goodness' score of each word remaining and then return the one
+    /// with the highest goodness. We'll use information theory to compute the expected
+    /// amount of information we would gain if a word isn't the answer, combined with
+    /// the probability of words that are likely to be the answer. This is the formula we
+    /// will use:
+    /// `- SUM_i prob_i * log_2(prob_i)`
+    ///
+    /// # Example
+    /// imagine we have a list of possible candidate words: [word_1, word_2, ..., word_n]
+    /// and we want to determine the "goodness" score of word_i.
+    /// The goodness is the sum of the goodness of each possible pattern we MIGHT see
+    /// as a result of guessing it, multiplied by the likely-hood of that pattern occurring.
     fn guess(&mut self, history: &[Guess]) -> String {
         (*self)(history)
     }

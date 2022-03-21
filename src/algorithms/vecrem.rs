@@ -1,26 +1,22 @@
-//! A wordle solver algorithm that optimizes some of the allocations done in the Unoptimized
-//! algorithm:
-//! 1. it iterates over bytes instead of UTF-8 codepoints
-//! 2. it removes repeated .to_string() calls in the inner loop of the guess function and
-//! replaces it with Cow::Borrowed()
+//! A wordle solver algorithm that optimizes the use of the Vector used
+//! to store the remaining dictionary words.
 //!
 use std::borrow::Cow;
-use std::collections::HashMap;
 use crate::{Guesser, Guess, DICTIONARY, Correctness};
 
-pub struct Allocs {
+pub struct Vecrem {
     /// a map containing all possible words that could be a possible solution
     /// it maps a `word` -> `occurrence count`, where occurrence_count is the number of times
     /// that word appeared in books
-    remaining: HashMap<&'static str, usize>,
+    remaining: Vec<(&'static str, usize)>,
 }
 
-impl Allocs {
+impl Vecrem {
 
-    /// Creates a new Allocs algorithm for solving wordle
+    /// Creates a new Vecrem algorithm for solving wordle
     pub fn new() -> Self {
         Self {
-            remaining: HashMap::from_iter(
+            remaining: Vec::from_iter(
                 DICTIONARY
                     .lines()
                     .map(|line| {
@@ -43,13 +39,13 @@ struct Candidate {
     goodness: f64,
 }
 
-impl Guesser for Allocs {
+impl Guesser for Vecrem {
 
     fn guess(&mut self, history: &[Guess]) -> String {
 
         // prune the dictionary by only keeping words that could be a possible match
         if let Some(last) = history.last() {
-            self.remaining.retain(|&word, _| last.matches(word));
+            self.remaining.retain(|(word, _)| last.matches(word));
         }
 
         // hardcode the first guess to "tares"
@@ -58,11 +54,13 @@ impl Guesser for Allocs {
         }
 
         // the sum of the counts of all the remaining words in the dictionary
-        let remaining_count: usize = self.remaining.iter().map(|(_, &c)| c).sum();
+        let remaining_count: usize = self.remaining
+            .iter()
+            .map(|&(_, c)| c).sum();
         // the best word
         let mut best: Option<Candidate> = None;
 
-        for (&word, _) in &self.remaining {
+        for &(word, _) in &self.remaining {
             let mut sum = 0.0;
 
             for pattern in Correctness::patterns() {
@@ -73,7 +71,7 @@ impl Guesser for Allocs {
                 // are the probabilities of getting each pattern. We sum together all those
                 // probabilities and use that to determine the entropy information amount from
                 // guessing that word
-                for (&candidate, &count) in &self.remaining {
+                for &(candidate, count) in &self.remaining {
                     // considering a "world" where we did guess "word" and got "pattern" as the
                     // correctness. Now compute what _then_ is left
                     let g = Guess {
