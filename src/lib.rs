@@ -66,7 +66,6 @@ pub enum Correctness {
 }
 
 impl Correctness {
-
     /// computes and returns the Correctness "mask" for each character of the given `guess`
     /// when compared against the characters of the given `answer`.
     fn compute(answer: &str, guess: &str) -> [Self; 5] {
@@ -75,7 +74,10 @@ impl Correctness {
         let mut c = [Correctness::Wrong; 5];
 
         // mark green chars
-        for (i, (a, g)) in answer.chars().zip(guess.chars()).enumerate() {
+        for (i, (a, g)) in answer
+            .bytes()
+            .zip(guess.bytes())
+            .enumerate() {
             if a == g {
                 c[i] = Correctness::Correct;
             }
@@ -87,12 +89,12 @@ impl Correctness {
                 used[i] = true;
             }
         }
-        for (i, g) in guess.chars().enumerate() {
+        for (i, g) in guess.bytes().enumerate() {
             if c[i] == Correctness::Correct {
                 // already marked green
                 continue;
             }
-            if answer.chars().enumerate().any(|(ai, a)| {
+            if answer.bytes().enumerate().any(|(ai, a)| {
                 if a == g && !used[ai] {
                     used[ai] = true;
                     return true;
@@ -136,7 +138,6 @@ pub struct Guess<'a> {
 }
 
 impl Guess<'_> {
-
     /// compares the given `word` against the word in this guess to see if `word` could be a
     /// plausible guess... a.k.a  a "match"
     /// returns `true` if `word` could be a plausible guess
@@ -226,7 +227,6 @@ pub trait Guesser {
 }
 
 impl Guesser for fn(history: &[Guess]) -> String {
-
     /// A guessing algorithm for wordle.
     /// We Need to find the 'goodness' score of each word remaining and then return the one
     /// with the highest goodness. We'll use information theory to compute the expected
@@ -277,8 +277,9 @@ macro_rules! mask {
 #[cfg(test)]
 mod tests {
     mod guess_matcher {
-        use crate::Guess;
         use std::borrow::Cow;
+
+        use crate::Guess;
 
         /// checks if a Guess matches a word
         /// Ex. `check!("abcde" + [C C C C C] allows "abcde");`
@@ -311,7 +312,6 @@ mod tests {
 
             check!("tares" + [W M M W W] disallows "brink");
         }
-
     }
 
     mod game {

@@ -1,5 +1,5 @@
-//! A wordle solver algorithm that optimizes the use of the Vector used
-//! to store the remaining dictionary words.
+//! A wordle solver algorithm that uses a Vector instead of
+//! a HashMap to store, iterate and compare remaining words
 //!
 use std::borrow::Cow;
 use crate::{Guesser, Guess, DICTIONARY, Correctness};
@@ -75,7 +75,6 @@ impl Guesser for Vecrem {
                     // considering a "world" where we did guess "word" and got "pattern" as the
                     // correctness. Now compute what _then_ is left
                     let g = Guess {
-                        // OPTIMIZED word.to_string() removed in favor of Cow::Borrowed
                         word: Cow::Borrowed(word),
                         mask: pattern,
                     };
