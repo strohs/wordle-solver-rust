@@ -22,6 +22,7 @@ enum Implementation {
     Unoptimized,
     Allocs,
     Vecrem,
+    Once
 }
 
 
@@ -38,6 +39,9 @@ fn main() {
         },
         Implementation::Vecrem => {
             play(|| wordle_solver::algorithms::Vecrem::new(), args.max);
+        },
+        Implementation::Once => {
+            play(|| wordle_solver::algorithms::OnceInit::new(), args.max);
         },
     }
 }
