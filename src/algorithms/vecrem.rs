@@ -1,19 +1,18 @@
 //! A wordle solver algorithm that uses a Vector instead of
 //! a HashMap to store, iterate and compare remaining words
 //!
-use std::borrow::Cow;
-use crate::{Guesser, Guess, DICTIONARY, Correctness};
+use crate::{Guesser, Guess, DICTIONARY, Correctness, Word};
 
 pub struct Vecrem {
     /// a map containing all possible words that could be a possible solution
     /// it maps a `word` -> `occurrence count`, where occurrence_count is the number of times
     /// that word appeared in books
-    remaining: Vec<(&'static str, usize)>,
+    remaining: Vec<(Word, usize)>,
 }
 
 impl Vecrem {
 
-    /// Creates a new Vecrem algorithm for solving wordle
+    /// Creates a new algorithm for solving wordle
     pub fn new() -> Self {
         Self {
             remaining: Vec::from_iter(
@@ -24,6 +23,7 @@ impl Vecrem {
                             .split_once(' ')
                             .expect("every line is a word + space + occurrence_count");
                         let count: usize = count.parse().expect("every count is a number");
+                        let word = word.as_bytes().try_into().expect("every dictionary word is 5 characters");
                         (word, count)
                     })),
         }
@@ -34,23 +34,23 @@ impl Vecrem {
 #[derive(Debug, Copy, Clone)]
 struct Candidate {
     /// the candidate word
-    word: &'static str,
+    word: Word,
     /// the candidates 'goodness' score, or entropy 'bits'. Higher is better
     goodness: f64,
 }
 
 impl Guesser for Vecrem {
 
-    fn guess(&mut self, history: &[Guess]) -> String {
+    fn guess(&mut self, history: &[Guess]) -> Word {
 
         // prune the dictionary by only keeping words that could be a possible match
         if let Some(last) = history.last() {
-            self.remaining.retain(|(word, _)| last.matches(word));
+            self.remaining.retain(|(word, _)| last.matches(*word));
         }
 
         // hardcode the first guess to "tares"
         if history.is_empty() {
-            return "tares".to_string();
+            return *b"tares";
         }
 
         // the sum of the counts of all the remaining words in the dictionary
@@ -75,7 +75,7 @@ impl Guesser for Vecrem {
                     // considering a "world" where we did guess "word" and got "pattern" as the
                     // correctness. Now compute what _then_ is left
                     let g = Guess {
-                        word: Cow::Borrowed(word),
+                        word: word,
                         mask: pattern,
                     };
                     if g.matches(candidate) {
@@ -99,6 +99,6 @@ impl Guesser for Vecrem {
                 best = Some(Candidate { word, goodness })
             }
         }
-        best.unwrap().word.to_string()
+        best.unwrap().word
     }
 }

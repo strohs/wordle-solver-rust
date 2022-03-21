@@ -49,8 +49,9 @@ fn main() {
 fn play<G>(mut maker: impl FnMut() -> G, max: Option<usize>) where G: Guesser {
     let w = wordle_solver::Wordle::new();
     for answer in GAMES.split_whitespace().take(max.unwrap_or(usize::MAX)) {
+        let answer_bytes = answer.as_bytes().try_into().expect("every answer is a 5 character word");
         let guesser = (maker)();
-        if let Some(score) = w.play(answer, guesser) {
+        if let Some(score) = w.play(answer_bytes, guesser) {
             println!("guessed '{}' in {}", &answer, score);
         } else {
             eprintln!("failed to guess..zoinks!");
