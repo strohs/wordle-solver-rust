@@ -75,6 +75,8 @@ impl Correctness {
     /// computes and returns the Correctness "mask" for each character of the given `guess`
     /// when compared against the characters of the given `answer`.
     fn compute(answer: Word, guess: Word) -> [Self; 5] {
+        assert_eq!(answer.len(), 5);
+        assert_eq!(guess.len(), 5);
         let mut c = [Correctness::Wrong; 5];
 
         // first mark green chars
