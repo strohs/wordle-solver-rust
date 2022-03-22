@@ -23,7 +23,8 @@ enum Implementation {
     Allocs,
     Vecrem,
     Once,
-    Precalc
+    Precalc,
+    Weight,
 }
 
 
@@ -46,6 +47,9 @@ fn main() {
         },
         Implementation::Precalc => {
             play(|| wordle_solver::algorithms::PreCalc::new(), args.max);
+        },
+        Implementation::Weight => {
+            play(|| wordle_solver::algorithms::Weight::new(), args.max);
         },
     }
 }
