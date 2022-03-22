@@ -287,7 +287,6 @@ macro_rules! mask {
 #[cfg(test)]
 mod tests {
     mod guess_matcher {
-        use std::borrow::Cow;
 
         use crate::Guess;
 
@@ -296,20 +295,26 @@ mod tests {
         macro_rules! check {
             ($prev:literal + [$($mask:tt)+] allows $next:literal) => {
                 assert!(Guess {
-                    word: Cow::Borrowed($prev),
+                    word: *$prev,
                     mask: mask![$($mask )+]
-                }.matches($next));
+                }
+                .matches(*$next));
+                assert_eq!($crate::Correctness::compute(*$next, *$prev), mask![$($mask )+]);
             };
             ($prev:literal + [$($mask:tt)+] disallows $next:literal) => {
                 assert!(!Guess {
-                    word: Cow::Borrowed($prev),
+                    word: *$prev,
                     mask: mask![$($mask )+]
-                }.matches($next));
+                }
+                .matches(*$next));
+                assert_ne!($crate::Correctness::compute(*$next, *$prev), mask![$($mask )+]);
             }
         }
 
+
         #[test]
         fn matches() {
+
             // checking previous guess + prev. mask, against the latest guessed word
             check!(b"abcde" + [C C C C C] allows b"abcde");
             check!(b"abcdf" + [C C C C C] disallows b"abcde");

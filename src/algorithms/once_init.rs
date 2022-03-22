@@ -53,7 +53,7 @@ impl Guesser for OnceInit {
         // prune the dictionary by only keeping words that could be a possible match
         if let Some(last) = history.last() {
             if matches!(self.remaining, Cow::Owned(_)) {
-                // if the remaining Vec is already owned, just retain the matching words
+                // if self.remaining Vec is already owned, just mutate the Vec and retain the matching words
                 self.remaining
                     .to_mut()
                     .retain(|(word, _)| last.matches(*word));
