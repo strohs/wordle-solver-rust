@@ -1,5 +1,5 @@
-//! A wordle solver algorithm that pre-calculates all possible combinations of:
-//! word + word + mask
+//! A wordle solver algorithm that pre-calculates all possible combinations of a correctness
+//! check on: word + word + mask
 //!
 use std::borrow::Cow;
 use std::collections::{BTreeMap};
