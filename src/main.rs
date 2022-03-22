@@ -25,6 +25,7 @@ enum Implementation {
     Once,
     Precalc,
     Weight,
+    Prune
 }
 
 
@@ -50,6 +51,9 @@ fn main() {
         },
         Implementation::Weight => {
             play(|| wordle_solver::algorithms::Weight::new(), args.max);
+        },
+        Implementation::Prune => {
+            play(|| wordle_solver::algorithms::Prune::new(), args.max);
         },
     }
 }

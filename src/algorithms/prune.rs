@@ -1,23 +1,24 @@
-//! A wordle solver algorithm that weights more common words better
-//! than less common words when computing the goodness score. This results in
-//! winning games in fewer turns since Wordle actually uses more common 5-letter words.
+//! A wordle solver algorithm that prunes correctness patterns that can no
+//! longer be valid at each iteration of a guess
 //!
 use std::borrow::Cow;
 use once_cell::sync::OnceCell;
 use crate::{Guesser, Guess, DICTIONARY, Correctness};
 
 static INITIAL: OnceCell<Vec<(&'static str, usize)>> = OnceCell::new();
+static PATTERNS: OnceCell<Vec<[Correctness; 5]>> = OnceCell::new();
 
-pub struct Weight {
+pub struct Prune {
     /// a map containing all possible words that could be a possible solution
     /// it maps a `word` -> `occurrence count`, where occurrence_count is the number of times
     /// that word appeared in books
     // Cow is used because we are either going to be borrowing a Dictionary or we are going to
     // own a dictionary once we start pruning words
     remaining: Cow<'static, Vec<(&'static str, usize)>>,
+    patterns: Cow<'static, Vec<[Correctness; 5]>>,
 }
 
-impl Weight {
+impl Prune {
 
     /// Creates a new Once algorithm for solving wordle
     pub fn new() -> Self {
@@ -34,6 +35,7 @@ impl Weight {
                             (word, count)
                         }))
             })),
+            patterns: Cow::Borrowed(PATTERNS.get_or_init(|| Vec::from_iter(Correctness::patterns()))),
         }
     }
 }
@@ -47,10 +49,9 @@ struct Candidate {
     goodness: f64,
 }
 
-impl Guesser for Weight {
+impl Guesser for Prune {
 
     fn guess(&mut self, history: &[Guess]) -> String {
-
         // prune the dictionary by only keeping words that could be a possible match
         if let Some(last) = history.last() {
             if matches!(self.remaining, Cow::Owned(_)) {
@@ -71,7 +72,11 @@ impl Guesser for Weight {
 
         // hardcode the first guess to "tares"
         if history.is_empty() {
+            self.patterns = Cow::Borrowed(PATTERNS.get().unwrap());
             return "tares".to_string();
+        } else {
+            // there should be patterns left if we are still guessing
+            assert!(!self.patterns.is_empty());
         }
 
         // the sum of the counts of all the remaining words in the dictionary
@@ -84,7 +89,8 @@ impl Guesser for Weight {
         for &(word, count) in &*self.remaining {
             let mut sum = 0.0;
 
-            for pattern in Correctness::patterns() {
+            // checks that the given pattern matches
+            let check_pattern = |pattern: &[Correctness; 5]| {
                 // total of the count(s) of words that match a pattern
                 let mut in_pattern_total: usize = 0;
 
@@ -97,17 +103,30 @@ impl Guesser for Weight {
                     // correctness. Now compute what _then_ is left
                     let g = Guess {
                         word: Cow::Borrowed(word),
-                        mask: pattern,
+                        mask: *pattern,
                     };
                     if g.matches(candidate) {
                         in_pattern_total += count;
                     }
                 }
                 if in_pattern_total == 0 {
-                    continue;
+                    return false;
                 }
                 let prob_of_this_pattern = in_pattern_total as f64 / remaining_count as f64;
-                sum += prob_of_this_pattern * prob_of_this_pattern.log2()
+                sum += prob_of_this_pattern * prob_of_this_pattern.log2();
+                return true;
+            };
+
+            // if patterns is already owned, then start pruning with owned vec, else
+            // create a new owned vec but filter valid patterns first
+            if matches!(self.patterns, Cow::Owned(_)) {
+                self.patterns.to_mut().retain(check_pattern);
+            } else {
+                self.patterns = Cow::Owned(self.patterns
+                    .iter()
+                    .copied()
+                    .filter(check_pattern)
+                    .collect());
             }
             // compute the probability of the current word using its occurrence count
             let p_word = count as f64 / remaining_count as f64;
