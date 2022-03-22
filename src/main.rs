@@ -56,12 +56,17 @@ fn main() {
 
 fn play<G>(mut maker: impl FnMut() -> G, max: Option<usize>) where G: Guesser {
     let w = wordle_solver::Wordle::new();
+    let mut score = 0;
+    let mut games = 0;
     for answer in GAMES.split_whitespace().take(max.unwrap_or(usize::MAX)) {
         let guesser = (maker)();
-        if let Some(score) = w.play(answer, guesser) {
-            println!("guessed '{}' in {}", &answer, score);
+        if let Some(s) = w.play(answer, guesser) {
+            games += 1;
+            score += s;
+            println!("guessed '{}' in {}", &answer, s);
         } else {
             eprintln!("failed to guess..zoinks!");
         }
     }
+    println!("average score {:.2}", score as f64 / games as f64 );
 }
