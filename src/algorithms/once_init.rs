@@ -2,9 +2,9 @@
 //!
 use std::borrow::Cow;
 use once_cell::sync::OnceCell;
-use crate::{Guesser, Guess, DICTIONARY, Correctness, Word};
+use crate::{Guesser, Guess, DICTIONARY, Correctness};
 
-static INITIAL: OnceCell<Vec<(Word, usize)>> = OnceCell::new();
+static INITIAL: OnceCell<Vec<(&'static str, usize)>> = OnceCell::new();
 
 pub struct OnceInit {
     /// a map containing all possible words that could be a possible solution
@@ -12,7 +12,7 @@ pub struct OnceInit {
     /// that word appeared in books
     // Cow is used because we are either going to be borrowing a Dictionary or we are going to
     // own a dictionary once we start pruning words
-    remaining: Cow<'static, Vec<(Word, usize)>>,
+    remaining: Cow<'static, Vec<(&'static str, usize)>>,
 }
 
 impl OnceInit {
@@ -29,7 +29,6 @@ impl OnceInit {
                                 .split_once(' ')
                                 .expect("every line is a word + space + occurrence_count");
                             let count: usize = count.parse().expect("every count is a number");
-                            let word = word.as_bytes().try_into().expect("every word is 5 characters");
                             (word, count)
                         }))
             })),
@@ -41,14 +40,14 @@ impl OnceInit {
 #[derive(Debug, Copy, Clone)]
 struct Candidate {
     /// the candidate word
-    word: Word,
+    word: &'static str,
     /// the candidates 'goodness' score, or entropy 'bits'. Higher is better
     goodness: f64,
 }
 
 impl Guesser for OnceInit {
 
-    fn guess(&mut self, history: &[Guess]) -> Word {
+    fn guess(&mut self, history: &[Guess]) -> String {
 
         // prune the dictionary by only keeping words that could be a possible match
         if let Some(last) = history.last() {
@@ -56,12 +55,12 @@ impl Guesser for OnceInit {
                 // if the remaining Vec is already owned, just retain the matching words
                 self.remaining
                     .to_mut()
-                    .retain(|(word, _)| last.matches(*word));
+                    .retain(|(word, _)| last.matches(word));
             } else {
                 // else, create a new owned Vec from filtering the matching words
                 self.remaining = Cow::Owned(self.remaining
                     .iter()
-                    .filter(|(word, _)| last.matches(*word))
+                    .filter(|(word, _)| last.matches(word))
                     .copied()
                     .collect());
             }
@@ -70,7 +69,7 @@ impl Guesser for OnceInit {
 
         // hardcode the first guess to "tares"
         if history.is_empty() {
-            return *b"tares";
+            return "tares".to_string();
         }
 
         // the sum of the counts of all the remaining words in the dictionary
@@ -95,7 +94,7 @@ impl Guesser for OnceInit {
                     // considering a "world" where we did guess "word" and got "pattern" as the
                     // correctness. Now compute what _then_ is left
                     let g = Guess {
-                        word: word,
+                        word: Cow::Borrowed(word),
                         mask: pattern,
                     };
                     if g.matches(candidate) {
@@ -119,6 +118,6 @@ impl Guesser for OnceInit {
                 best = Some(Candidate { word, goodness })
             }
         }
-        best.unwrap().word
+        best.unwrap().word.to_string()
     }
 }

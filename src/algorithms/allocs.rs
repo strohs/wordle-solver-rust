@@ -3,20 +3,21 @@
 //! 1. it iterates over bytes instead of UTF-8 codepoints
 //! 2. it removes repeated .to_string() calls in the inner loop of the guess function and
 //! replaces it with Cow::Borrowed()
-
+//!
+use std::borrow::Cow;
 use std::collections::HashMap;
-use crate::{Guesser, Guess, DICTIONARY, Correctness, Word};
+use crate::{Guesser, Guess, DICTIONARY, Correctness};
 
 pub struct Allocs {
     /// a map containing all possible words that could be a possible solution
     /// it maps a `word` -> `occurrence count`, where occurrence_count is the number of times
     /// that word appeared in books
-    remaining: HashMap<Word, usize>,
+    remaining: HashMap<&'static str, usize>,
 }
 
 impl Allocs {
 
-    /// Creates a new algorithm for solving wordle
+    /// Creates a new Allocs algorithm for solving wordle
     pub fn new() -> Self {
         Self {
             remaining: HashMap::from_iter(
@@ -27,7 +28,6 @@ impl Allocs {
                             .split_once(' ')
                             .expect("every line is a word + space + occurrence_count");
                         let count: usize = count.parse().expect("every count is a number");
-                        let word = word.as_bytes().try_into().expect("every dictionary word is 5 characters");
                         (word, count)
                     })),
         }
@@ -38,14 +38,14 @@ impl Allocs {
 #[derive(Debug, Copy, Clone)]
 struct Candidate {
     /// the candidate word
-    word: Word,
+    word: &'static str,
     /// the candidates 'goodness' score, or entropy 'bits'. Higher is better
     goodness: f64,
 }
 
 impl Guesser for Allocs {
 
-    fn guess(&mut self, history: &[Guess]) -> Word {
+    fn guess(&mut self, history: &[Guess]) -> String {
 
         // prune the dictionary by only keeping words that could be a possible match
         if let Some(last) = history.last() {
@@ -54,7 +54,7 @@ impl Guesser for Allocs {
 
         // hardcode the first guess to "tares"
         if history.is_empty() {
-            return *b"tares";
+            return "tares".to_string();
         }
 
         // the sum of the counts of all the remaining words in the dictionary
@@ -73,15 +73,15 @@ impl Guesser for Allocs {
                 // are the probabilities of getting each pattern. We sum together all those
                 // probabilities and use that to determine the entropy information amount from
                 // guessing that word
-                for (candidate, &count) in &self.remaining {
+                for (&candidate, &count) in &self.remaining {
                     // considering a "world" where we did guess "word" and got "pattern" as the
                     // correctness. Now compute what _then_ is left
                     let g = Guess {
                         // OPTIMIZED word.to_string() removed in favor of Cow::Borrowed
-                        word: word,
+                        word: Cow::Borrowed(word),
                         mask: pattern,
                     };
-                    if g.matches(*candidate) {
+                    if g.matches(candidate) {
                         in_pattern_total += count;
                     }
                 }
@@ -102,6 +102,6 @@ impl Guesser for Allocs {
                 best = Some(Candidate { word, goodness })
             }
         }
-        best.unwrap().word
+        best.unwrap().word.to_string()
     }
 }

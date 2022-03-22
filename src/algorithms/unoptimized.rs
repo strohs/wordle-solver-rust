@@ -1,17 +1,18 @@
+use std::borrow::Cow;
 use std::collections::HashMap;
-use crate::{Guesser, Guess, DICTIONARY, Correctness, Word};
+use crate::{Guesser, Guess, DICTIONARY, Correctness};
 
 /// A "naive", i.e. unoptimized, wordle solver algorithm
 pub struct Unoptimized {
     /// a map containing all possible words that could be a possible solution
     /// it maps a `word` -> `occurrence count`, where occurrence_count is the number of times
     /// that word appeared in books
-    remaining: HashMap<Word, usize>,
+    remaining: HashMap<&'static str, usize>,
 }
 
 impl Unoptimized {
 
-    /// Creates a new algorithm for solving wordle
+    /// Creates a new unoptimized algorithm for solving wordle
     pub fn new() -> Self {
         Self {
             remaining: HashMap::from_iter(
@@ -22,7 +23,6 @@ impl Unoptimized {
                             .split_once(' ')
                             .expect("every line is a word + space + occurrence_count");
                         let count: usize = count.parse().expect("every count is a number");
-                        let word = word.as_bytes().try_into().expect("every dictionary word is 5 characters");
                         (word, count)
                     })),
         }
@@ -33,14 +33,14 @@ impl Unoptimized {
 #[derive(Debug, Copy, Clone)]
 struct Candidate {
     /// the candidate word
-    word: Word,
+    word: &'static str,
     /// the candidates 'goodness' score, or entropy 'bits'. Higher is better
     goodness: f64,
 }
 
 impl Guesser for Unoptimized {
 
-    fn guess(&mut self, history: &[Guess]) -> Word {
+    fn guess(&mut self, history: &[Guess]) -> String {
 
         // prune the dictionary by only keeping words that could be a possible match
         if let Some(last) = history.last() {
@@ -49,7 +49,7 @@ impl Guesser for Unoptimized {
 
         // hardcode the first guess to "tares"
         if history.is_empty() {
-            return *b"tares";
+            return "tares".to_string();
         }
 
         // the sum of the counts of all the remaining words in the dictionary
@@ -72,7 +72,7 @@ impl Guesser for Unoptimized {
                     // considering a "world" where we did guess "word" and got "pattern" as the
                     // correctness. Now compute what _then_ is left
                     let g = Guess {
-                        word: word,
+                        word: Cow::Owned(word.to_string()),
                         mask: pattern,
                     };
                     if g.matches(candidate) {
@@ -96,6 +96,6 @@ impl Guesser for Unoptimized {
                 best = Some(Candidate { word, goodness })
             }
         }
-        best.unwrap().word
+        best.unwrap().word.to_string()
     }
 }
