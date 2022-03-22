@@ -55,7 +55,7 @@ impl Wordle {
 
 /// Correctness holds the three possible 'states' for the characters of a word when compared
 /// against a wordle answer.
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, PartialOrd, Ord)]
 pub enum Correctness {
     /// Green
     Correct,
