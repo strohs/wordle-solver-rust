@@ -69,7 +69,7 @@ impl Guesser for OnceInit {
 
         // hardcode the first guess to "tares"
         if history.is_empty() {
-            return "tares".to_string();
+            return "crate".to_string();
         }
 
         // the sum of the counts of all the remaining words in the dictionary
