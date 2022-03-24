@@ -3,8 +3,6 @@ use wordle_solver::Guesser;
 
 const GAMES: &str = include_str!("../answers.txt");
 
-
-/// Simple program to greet a person
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 struct Args {
@@ -17,6 +15,7 @@ struct Args {
     max: Option<usize>,
 }
 
+/// various Worlde guesser implementations
 #[derive(ArgEnum, Debug, Copy, Clone)]
 enum Implementation {
     Unoptimized,

@@ -146,79 +146,6 @@ impl Guess<'_> {
     pub fn matches(&self, word: &str) -> bool {
         // using Correctness::compute is a 18x runtime improvement over using old matches
         return Correctness::compute(word, &self.word) == self.mask;
-
-        // assert_eq!(self.word.len(), 5);
-        // assert_eq!(word.len(), 5);
-        //
-        // // keeps track of which chars in a word have been used thus far
-        // let mut used = [false; 5];
-        //
-        // for (i, ((pg, &prev_guess_corr), w)) in self
-        //     .word
-        //     .bytes()
-        //     .zip(&self.mask)
-        //     .zip(word.bytes())
-        //     .enumerate() {
-        //     if prev_guess_corr == Correctness::Correct {
-        //         if pg != w {
-        //             return false;
-        //         } else {
-        //             used[i] = true;
-        //         }
-        //     }
-        // }
-        //
-        // for (i, (w, &mask)) in word
-        //     .bytes()
-        //     .zip(&self.mask)
-        //     .enumerate() {
-        //     if mask == Correctness::Correct {
-        //         // must be correct or we would've returned in the previous loop
-        //         continue;
-        //     }
-        //     let mut plausible = true;
-        //     if self.word
-        //         .bytes()
-        //         .zip(&self.mask)
-        //         .enumerate()
-        //         .any(|(j, (pg, &m))| {
-        //             if pg != w {
-        //                 return false;
-        //             }
-        //
-        //             if used[j] {
-        //                 return false;
-        //             }
-        //
-        //             // we're looking at 'word_char' in 'word' and have found a 'word_char' in the
-        //             // previous guess. The color of that previous 'word_char' will tell us whether
-        //             // this 'word_char' might be okay
-        //             match m {
-        //                 Correctness::Correct => unreachable!("all correct guesses should have already returned or be used"),
-        //                 Correctness::Misplaced if j == i => {
-        //                     // 'w' was yellow in this same position last time around, which means that
-        //                     // word cannot be the answer
-        //                     plausible = false;
-        //                     return false;
-        //                 }
-        //                 Correctness::Misplaced => {
-        //                     used[j] = true;
-        //                     return true;
-        //                 }
-        //                 Correctness::Wrong => {
-        //                     plausible = false;
-        //                     return false;
-        //                 }
-        //             }
-        //         }) && plausible {
-        //         // the character in 'w' was yellow in a previous match
-        //     } else if !plausible {
-        //         return false;
-        //     } else {
-        //         // we have no info on char 'w', so word might still match
-        //     }
-        // }
-        // true
     }
 }
 
@@ -228,7 +155,7 @@ pub trait Guesser {
 
 impl Guesser for fn(history: &[Guess]) -> String {
     /// A guessing algorithm for wordle.
-    /// We Need to find the 'goodness' score of each word remaining and then return the one
+    /// We need to find the 'goodness' score of each word remaining and then return the one
     /// with the highest goodness. We'll use information theory to compute the expected
     /// amount of information we would gain if a word isn't the answer, combined with
     /// the probability of words that are likely to be the answer. This is the formula we

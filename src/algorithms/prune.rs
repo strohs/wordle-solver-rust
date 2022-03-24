@@ -20,7 +20,7 @@ pub struct Prune {
 
 impl Prune {
 
-    /// Creates a new Once algorithm for solving wordle
+    /// creates a new Prune algo, loads the word dictionary if not already loaded
     pub fn new() -> Self {
         Self {
             remaining: Cow::Borrowed(INITIAL.get_or_init(|| {
@@ -55,7 +55,7 @@ impl Guesser for Prune {
         // prune the dictionary by only keeping words that could be a possible match
         if let Some(last) = history.last() {
             if matches!(self.remaining, Cow::Owned(_)) {
-                // if the remaining Vec is already owned, just retain the matching words
+                // if the remaining Vec is already owned, mutate it to retain the matching words
                 self.remaining
                     .to_mut()
                     .retain(|(word, _)| last.matches(word));
@@ -83,15 +83,15 @@ impl Guesser for Prune {
         let remaining_count: usize = self.remaining
             .iter()
             .map(|&(_, c)| c).sum();
-        // the best word
+        // the best candidate so far
         let mut best: Option<Candidate> = None;
 
         for &(word, count) in &*self.remaining {
             let mut sum = 0.0;
 
-            // checks that the given pattern matches
+            // lambda that checks if the given pattern matches
             let check_pattern = |pattern: &[Correctness; 5]| {
-                // total of the count(s) of words that match a pattern
+                // sum of the count(s) of all words that match the pattern
                 let mut in_pattern_total: usize = 0;
 
                 // given a particular candidate word, if we guess this word, what

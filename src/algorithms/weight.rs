@@ -19,7 +19,7 @@ pub struct Weight {
 
 impl Weight {
 
-    /// Creates a new Once algorithm for solving wordle
+    /// Creates a new Weight algorithm for solving wordle
     pub fn new() -> Self {
         Self {
             remaining: Cow::Borrowed(INITIAL.get_or_init(|| {
