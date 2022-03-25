@@ -9,12 +9,12 @@ static INITIAL: OnceCell<Vec<(&'static str, usize)>> = OnceCell::new();
 static PATTERNS: OnceCell<Vec<[Correctness; 5]>> = OnceCell::new();
 
 pub struct Prune {
-    /// a map containing all possible words that could be a possible solution
-    /// it maps a `word` -> `occurrence count`, where occurrence_count is the number of times
-    /// that word appeared in books
+    /// a `Vec<(word, count)>` containing all possible words (and their occurrence count) that
+    /// could be a possible solution.
     // Cow is used because we are either going to be borrowing a Dictionary or we are going to
     // own a dictionary once we start pruning words
     remaining: Cow<'static, Vec<(&'static str, usize)>>,
+    /// holds all possible wordle correctness patterns, 3^5 elements
     patterns: Cow<'static, Vec<[Correctness; 5]>>,
 }
 
@@ -38,6 +38,25 @@ impl Prune {
             patterns: Cow::Borrowed(PATTERNS.get_or_init(|| Vec::from_iter(Correctness::patterns()))),
         }
     }
+
+    /// prune the list of remaining words by only keeping words that could be a possible match
+    /// with the `last_guess`
+    fn prune_remaining(&mut self, last_guess: &Guess) {
+        if matches!(self.remaining, Cow::Owned(_)) {
+            // if the remaining Vec is already owned, mutate it to retain the matching words
+            self.remaining
+                .to_mut()
+                .retain(|(word, _)| last_guess.matches(word));
+        } else {
+            // else, create a new owned Vec, but first, filter the matching words
+            self.remaining = Cow::Owned(self.remaining
+                .iter()
+                .filter(|(word, _)| last_guess.matches(word))
+                .copied()
+                .collect());
+        }
+    }
+
 }
 
 /// Holds the details of a potential best guess
@@ -52,22 +71,9 @@ struct Candidate {
 impl Guesser for Prune {
 
     fn guess(&mut self, history: &[Guess]) -> String {
-        // prune the dictionary by only keeping words that could be a possible match
-        if let Some(last) = history.last() {
-            if matches!(self.remaining, Cow::Owned(_)) {
-                // if the remaining Vec is already owned, mutate it to retain the matching words
-                self.remaining
-                    .to_mut()
-                    .retain(|(word, _)| last.matches(word));
-            } else {
-                // else, create a new owned Vec from filtering the matching words
-                self.remaining = Cow::Owned(self.remaining
-                    .iter()
-                    .filter(|(word, _)| last.matches(word))
-                    .copied()
-                    .collect());
-            }
 
+        if let Some(last) = history.last() {
+            self.prune_remaining(last);
         }
 
         // hardcode the first guess to "tares"
@@ -80,7 +86,7 @@ impl Guesser for Prune {
         }
 
         // the sum of the counts of all the remaining words in the dictionary
-        let remaining_count: usize = self.remaining
+        let remaining_word_count: usize = self.remaining
             .iter()
             .map(|&(_, c)| c).sum();
         // the best candidate so far
@@ -112,7 +118,7 @@ impl Guesser for Prune {
                 if in_pattern_total == 0 {
                     return false;
                 }
-                let prob_of_this_pattern = in_pattern_total as f64 / remaining_count as f64;
+                let prob_of_this_pattern = in_pattern_total as f64 / remaining_word_count as f64;
                 sum += prob_of_this_pattern * prob_of_this_pattern.log2();
                 return true;
             };
@@ -129,7 +135,7 @@ impl Guesser for Prune {
                     .collect());
             }
             // compute the probability of the current word using its occurrence count
-            let p_word = count as f64 / remaining_count as f64;
+            let p_word = count as f64 / remaining_word_count as f64;
             // negate the sum to get the final goodness amount, a.k.a the entropy "bits"
             // factor in the p_word when computing goodness
             let goodness = p_word * -sum;

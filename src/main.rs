@@ -1,5 +1,8 @@
+use std::borrow::Cow;
+use std::io::Write;
+use anyhow::anyhow;
 use clap::{ArgEnum, Parser};
-use wordle_solver::Guesser;
+use wordle_solver::{Correctness, Guess, Guesser};
 
 const GAMES: &str = include_str!("../answers.txt");
 
@@ -27,49 +30,25 @@ enum Implementation {
     Prune
 }
 
+fn main() -> Result<(), anyhow::Error> {
+    let mut guesser = wordle_solver::algorithms::Prune::new();
+    let mut guess_history: Vec<Guess> = Vec::new();
 
-
-fn main() {
-    let args = Args::parse();
-
-    match args.implementation {
-        Implementation::Unoptimized => {
-            play(|| wordle_solver::algorithms::Unoptimized::new(), args.max);
-        },
-        Implementation::Allocs => {
-            play(|| wordle_solver::algorithms::Allocs::new(), args.max);
-        },
-        Implementation::Vecrem => {
-            play(|| wordle_solver::algorithms::Vecrem::new(), args.max);
-        },
-        Implementation::Once => {
-            play(|| wordle_solver::algorithms::OnceInit::new(), args.max);
-        },
-        Implementation::Precalc => {
-            play(|| wordle_solver::algorithms::PreCalc::new(), args.max);
-        },
-        Implementation::Weight => {
-            play(|| wordle_solver::algorithms::Weight::new(), args.max);
-        },
-        Implementation::Prune => {
-            play(|| wordle_solver::algorithms::Prune::new(), args.max);
-        },
+    println!("Enter a guess and its resulting correctness mask separated by a space and press ENTER, example:'tares ccwmm'");
+    for turn in 1.. {
+        print!("Turn {} Guess:", turn);
+        std::io::stdout().flush();
+        let mut input = String::new();
+        std::io::stdin().read_line(&mut input)?;
+        let (word, mask) = input.trim_end().split_once(' ').ok_or(anyhow!("guess and mask must be separated by one space"))?;
+        let correctness = Correctness::try_from_str(mask)?;
+        let guess = Guess {
+            word: Cow::Owned(word.to_string()),
+            mask: correctness,
+        };
+        guess_history.push(guess);
+        let best_word = guesser.guess(&guess_history);
+        println!("try this guess... {}", &best_word);
     }
-}
-
-fn play<G>(mut maker: impl FnMut() -> G, max: Option<usize>) where G: Guesser {
-    let w = wordle_solver::Wordle::new();
-    let mut score = 0;
-    let mut games = 0;
-    for answer in GAMES.split_whitespace().take(max.unwrap_or(usize::MAX)) {
-        let guesser = (maker)();
-        if let Some(s) = w.play(answer, guesser) {
-            games += 1;
-            score += s;
-            println!("guessed '{}' in {}", &answer, s);
-        } else {
-            eprintln!("failed to guess..zoinks!");
-        }
-    }
-    println!("average score {:.2}", score as f64 / games as f64 );
+    Ok(())
 }

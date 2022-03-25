@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 use std::collections::HashSet;
+use anyhow::anyhow;
 
 pub mod algorithms;
 
@@ -125,7 +126,33 @@ impl Correctness {
         )
             .map(|(a, b, c, d, e)| [a, b, c, d, e])
     }
+
+    pub fn try_from_str(s: &str) -> Result<[Correctness; 5], anyhow::Error> {
+        if s.len() != 5 {
+            Err(anyhow!("correctness masks must be 5 characters"))
+        } else {
+            let mut mask = [Correctness::Wrong; 5];
+            for (i, c) in s.chars().enumerate() {
+                mask[i] = Correctness::try_from(c)?
+            }
+            Ok(mask)
+        }
+    }
 }
+
+impl TryFrom<char> for Correctness {
+    type Error = anyhow::Error;
+
+    fn try_from(value: char) -> Result<Self, Self::Error> {
+        match value.to_ascii_lowercase() {
+            'c' => Ok(Correctness::Correct),
+            'm' => Ok(Correctness::Misplaced),
+            'w' => Ok(Correctness::Wrong),
+            invalid => Err(anyhow!("invalid correctness: '{}'", invalid))
+        }
+    }
+}
+
 
 /// Guess holds the details of a guessed word.
 /// It contains a guessed word along with the correctness mask of that word compared against
