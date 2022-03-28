@@ -62,7 +62,7 @@ impl Guesser for Allocs {
         // the best word
         let mut best: Option<Candidate> = None;
 
-        for (&word, _) in &self.remaining {
+        for &word in self.remaining.keys() {
             let mut sum = 0.0;
 
             for pattern in Correctness::patterns() {

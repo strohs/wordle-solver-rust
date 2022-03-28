@@ -44,13 +44,19 @@ impl Wordle {
 
             assert!(self.dictionary.contains(&*guess));
 
-            let correctness = Correctness::compute(&answer, &guess);
+            let correctness = Correctness::compute(answer, &guess);
             history.push(Guess {
                 word: Cow::Owned(guess),
                 mask: correctness,
             })
         }
         None
+    }
+}
+
+impl Default for Wordle {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -172,7 +178,7 @@ impl Guess<'_> {
     /// Guesses mask data
     pub fn matches(&self, word: &str) -> bool {
         // using Correctness::compute is a 18x runtime improvement over using old matches
-        return Correctness::compute(word, &self.word) == self.mask;
+        Correctness::compute(word, &self.word) == self.mask
     }
 }
 

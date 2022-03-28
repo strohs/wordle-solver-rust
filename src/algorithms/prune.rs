@@ -56,7 +56,12 @@ impl Prune {
                 .collect());
         }
     }
+}
 
+impl Default for Prune {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 /// Holds the details of a potential best guess
@@ -93,9 +98,11 @@ impl Guesser for Prune {
         let mut best: Option<Candidate> = None;
 
         for &(word, count) in &*self.remaining {
+            // sum of all prob_of_a_pattern * prob_of_a_pattern.log2
             let mut sum = 0.0;
 
-            // lambda that checks if the given pattern matches
+            // checks if the given pattern matches any candidate words
+            // returns true if the pattern matches, false if it did not
             let check_pattern = |pattern: &[Correctness; 5]| {
                 // sum of the count(s) of all words that match the pattern
                 let mut in_pattern_total: usize = 0;
@@ -116,15 +123,16 @@ impl Guesser for Prune {
                     }
                 }
                 if in_pattern_total == 0 {
+                    // no candidate words matched the pattern
                     return false;
                 }
                 let prob_of_this_pattern = in_pattern_total as f64 / remaining_word_count as f64;
                 sum += prob_of_this_pattern * prob_of_this_pattern.log2();
-                return true;
+                true
             };
 
-            // if patterns is already owned, then start pruning with owned vec, else
-            // create a new owned vec but filter valid patterns first
+            // retain any patterns that still can possibly match candidate words, prune out
+            // any that can not match anymore
             if matches!(self.patterns, Cow::Owned(_)) {
                 self.patterns.to_mut().retain(check_pattern);
             } else {
@@ -134,10 +142,9 @@ impl Guesser for Prune {
                     .filter(check_pattern)
                     .collect());
             }
-            // compute the probability of the current word using its occurrence count
+            // compute the probability of the current `word` using its occurrence `count`
             let p_word = count as f64 / remaining_word_count as f64;
-            // negate the sum to get the final goodness amount, a.k.a the entropy "bits"
-            // factor in the p_word when computing goodness
+            // the goodnees score of `word` a.k.a its entropy "bits"
             let goodness = p_word * -sum;
 
             if let Some(c) = best {

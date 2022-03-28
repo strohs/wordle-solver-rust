@@ -13,10 +13,8 @@
 /// > cargo r --release --bin solver -- --help
 /// ```
 
-use std::borrow::Cow;
-use anyhow::anyhow;
 use clap::{ArgEnum, Parser};
-use wordle_solver::{Correctness, Guess, Guesser};
+use wordle_solver::{Guesser};
 
 const GAMES: &str = include_str!("../../answers.txt");
 
@@ -51,26 +49,26 @@ fn main() {
 
     match args.implementation {
         Implementation::Unoptimized => {
-            play(|| wordle_solver::algorithms::Unoptimized::new(), args.max);
+            play(wordle_solver::algorithms::Unoptimized::new, args.max);
         },
         Implementation::Allocs => {
-            play(|| wordle_solver::algorithms::Allocs::new(), args.max);
+            play(wordle_solver::algorithms::Allocs::new, args.max);
         },
         Implementation::Vecrem => {
-            play(|| wordle_solver::algorithms::Vecrem::new(), args.max);
+            play(wordle_solver::algorithms::Vecrem::new, args.max);
         },
         Implementation::Once => {
-            play(|| wordle_solver::algorithms::OnceInit::new(), args.max);
+            play(wordle_solver::algorithms::OnceInit::new, args.max);
         },
         Implementation::Precalc => {
-            play(|| wordle_solver::algorithms::PreCalc::new(), args.max);
+            play(wordle_solver::algorithms::PreCalc::new, args.max);
         },
         Implementation::Weight => {
-            play(|| wordle_solver::algorithms::Weight::new(), args.max);
+            play(wordle_solver::algorithms::Weight::new, args.max);
         },
         // run prune by default
         Implementation::Prune => {
-            play(|| wordle_solver::algorithms::Prune::new(), args.max);
+            play(wordle_solver::algorithms::Prune::new, args.max);
         },
     }
 }

@@ -4,8 +4,6 @@ use anyhow::anyhow;
 use clap::{ArgEnum, Parser};
 use wordle_solver::{Correctness, Guess, Guesser};
 
-const GAMES: &str = include_str!("../answers.txt");
-
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 struct Args {
@@ -31,16 +29,23 @@ enum Implementation {
 }
 
 fn main() -> Result<(), anyhow::Error> {
+    // use the Prune algorithm as it is the fastest so far
     let mut guesser = wordle_solver::algorithms::Prune::new();
     let mut guess_history: Vec<Guess> = Vec::new();
 
-    println!("Enter a guess and its resulting correctness mask separated by a space and press ENTER, example:'tares ccwmm'");
+    println!("Enter a guess and its resulting correctness mask separated by a space then press ENTER, example:'tares ccwmm'");
     for turn in 1.. {
         print!("Turn {} Guess:", turn);
-        std::io::stdout().flush();
+        std::io::stdout().flush()?;
+
         let mut input = String::new();
-        std::io::stdin().read_line(&mut input)?;
-        let (word, mask) = input.trim_end().split_once(' ').ok_or(anyhow!("guess and mask must be separated by one space"))?;
+        std::io::stdin()
+            .read_line(&mut input)?;
+        let (word, mask) = input
+            .trim_end()
+            .split_once(' ')
+            .ok_or_else(|| anyhow!("guess and mask must be separated by one space"))?;
+
         let correctness = Correctness::try_from_str(mask)?;
         let guess = Guess {
             word: Cow::Owned(word.to_string()),
