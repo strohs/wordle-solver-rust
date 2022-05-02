@@ -35,7 +35,7 @@ fn main() -> Result<(), anyhow::Error> {
 
     println!("Enter a guess and its resulting correctness mask separated by a space then press ENTER, example:'tares ccwmm'");
     for turn in 1.. {
-        print!("Turn {} Guess:", turn);
+        print!("Turn {} Guess and Pattern:", turn);
         std::io::stdout().flush()?;
 
         let mut input = String::new();

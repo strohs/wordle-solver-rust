@@ -46,10 +46,10 @@ In general, the wordle solver implemented here uses the formula for
 [Entropy of an information source](https://en.wikipedia.org/wiki/Information_theory#Entropy_of_an_information_source) to
 compute the "best" word to guess. 
 On any given turn, the best guess is the word that yields the highest amount of **information**, called "bits" in information theory.
-Or to put it another way, which guess would reduce the space of possibilities the most (i.e. eliminate the most words).
-The algorithm also needs to take into account a word's frequency data. Or how common it is in everyday use. This is because not all
-five-letter words are equally possible in a game of wordle. Wordle will use more common words like: `jelly` or `shark` 
-versus more obscure words like: `iller` or `jeely`.
+To put it another way, which guess would reduce the space of possibilities the most (i.e. eliminate the most words).
+The algorithm also needs to take into account a word's frequency data, or how common it is in everyday use. 
+This is because not all five-letter words are equally possible in a game of wordle. 
+Wordle will use more common words like: `jelly` or `shark` versus more obscure words like: `iller` or `jeely`.
 
 
 So the final formula to compute if a word, `w`, is the best guess is: 
