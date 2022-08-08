@@ -19,7 +19,6 @@ pub struct Prune {
 }
 
 impl Prune {
-
     /// creates a new Prune algo, loads the word dictionary if not already loaded
     pub fn new() -> Self {
         Self {
@@ -74,9 +73,7 @@ struct Candidate {
 }
 
 impl Guesser for Prune {
-
     fn guess(&mut self, history: &[Guess]) -> String {
-
         if let Some(last) = history.last() {
             self.prune_remaining(last);
         }
@@ -155,6 +152,6 @@ impl Guesser for Prune {
                 best = Some(Candidate { word, goodness })
             }
         }
-        best.unwrap().word.to_string()
+        best.expect("there should be words left that match the correctness pattern, perhaps a typo in the pattern").word.to_string()
     }
 }
