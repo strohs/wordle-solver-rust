@@ -1,14 +1,14 @@
 # Rust Wordle Solver
-A command line wordle solver that uses information theory to solve a game of [wordle](https://www.nytimes.com/games/wordle/index.html). 
+This is a command line tool that uses information theory to solve a game of [wordle](https://www.nytimes.com/games/wordle/index.html). 
 It's inspired by [3Blue1Brown](https://www.youtube.com/watch?v=v68zYyaEmEA) and
 [Jon Gjenset's](https://www.youtube.com/watch?v=doFowk4xj7Q) YouTube videos on this topic.
 
 ## Running
-This solver is a command line program that is used at the same time you are making guesses into the wordle web application.
-You make your first guess into the web app, and then enter that guess along with its corresponding "correctness" pattern
-into the wordle solver, separated by a space. 
+This solver is a separate command line program that is used at the same time you are making guesses into a game of wordle.
+As you make guesses in wordle, you enter the results of each guess into this solver, using a "correctness" pattern
+string. The solver will then report the next, best, word to guess.
 
-The correctness pattern is a five character string that represents the correctness of each letter of your guess as reported by wordle.
+The correctness pattern is a five character string that represents the correctness of each letter of your guess.
 It consists of the characters `c`,`m`, or `w`.
 - `c` a letter of the guess is in the **correct** position, the wordle web app shows these with a green background
 - `m` a letter of the guess is in the answer but is **misplaced**, or in the incorrect position, wordle shows these with a yellow background
@@ -24,7 +24,7 @@ For example, suppose your first guess is "event" and wordle displayed the follow
 The final correctness pattern is `mwwwe`
 
 ### Example
-to run the solver you'll need to have installed Rust 1.59 and Cargo.
+to run the solver you'll need to have installed (at least) Rust 1.59 and Cargo.
 From the project's root directory run:
 
 > cargo run --release
