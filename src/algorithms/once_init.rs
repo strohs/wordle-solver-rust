@@ -1,10 +1,10 @@
 //! A wordle solver algorithm that loads the word dictionary one time
 //!
 use std::borrow::Cow;
-use once_cell::sync::OnceCell;
+use std::sync::OnceLock;
 use crate::{Guesser, Guess, DICTIONARY, Correctness};
 
-static INITIAL: OnceCell<Vec<(&'static str, usize)>> = OnceCell::new();
+static INITIAL: OnceLock<Vec<(&'static str, usize)>> = OnceLock::new();
 
 pub struct OnceInit {
     /// a map containing all possible words that could be a possible solution

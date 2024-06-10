@@ -3,10 +3,10 @@
 //! winning games in fewer turns since Wordle actually uses more common 5-letter words.
 //!
 use std::borrow::Cow;
-use once_cell::sync::OnceCell;
+use std::sync::OnceLock;
 use crate::{Guesser, Guess, DICTIONARY, Correctness};
 
-static INITIAL: OnceCell<Vec<(&'static str, usize)>> = OnceCell::new();
+static INITIAL: OnceLock<Vec<(&'static str, usize)>> = OnceLock::new();
 
 pub struct Weight {
     /// a map containing all possible words that could be a possible solution

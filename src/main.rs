@@ -16,7 +16,7 @@ struct Args {
     max: Option<usize>,
 }
 
-/// various Worlde guesser implementations
+/// various Wordle guesser implementations
 #[derive(ArgEnum, Debug, Copy, Clone)]
 enum Implementation {
     Unoptimized,

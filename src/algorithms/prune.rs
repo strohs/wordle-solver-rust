@@ -2,11 +2,11 @@
 //! longer be valid at each iteration of a guess
 //!
 use std::borrow::Cow;
-use once_cell::sync::OnceCell;
+use std::sync::OnceLock;
 use crate::{Guesser, Guess, DICTIONARY, Correctness};
 
-static INITIAL: OnceCell<Vec<(&'static str, usize)>> = OnceCell::new();
-static PATTERNS: OnceCell<Vec<[Correctness; 5]>> = OnceCell::new();
+static INITIAL: OnceLock<Vec<(&'static str, usize)>> = OnceLock::new();
+static PATTERNS: OnceLock<Vec<[Correctness; 5]>> = OnceLock::new();
 
 pub struct Prune {
     /// a `Vec<(word, count)>` containing all possible words (and their occurrence count) that

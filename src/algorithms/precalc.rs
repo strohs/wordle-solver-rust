@@ -3,12 +3,12 @@
 //!
 use std::borrow::Cow;
 use std::collections::{BTreeMap};
-use once_cell::sync::OnceCell;
+use std::sync::OnceLock;
 use crate::{Guesser, Guess, DICTIONARY, Correctness};
 
 // holds the initial list of (word, count) from the dictionary, loaded only once
-static INITIAL: OnceCell<Vec<(&'static str, usize)>> = OnceCell::new();
-static MATCH: OnceCell<BTreeMap<(&'static str, &'static str, [Correctness; 5]), bool>> = OnceCell::new();
+static INITIAL: OnceLock<Vec<(&'static str, usize)>> = OnceLock::new();
+static MATCH: OnceLock<BTreeMap<(&'static str, &'static str, [Correctness; 5]), bool>> = OnceLock::new();
 
 pub struct PreCalc {
     /// a map containing all possible words that could be a possible solution
